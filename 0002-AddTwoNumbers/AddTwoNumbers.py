@@ -36,5 +36,5 @@ class Solution(object):
             iter1 = iter1.next if iter1.next else None
             iter2 = iter2.next if iter2.next else None
         
-        return result.next;
+        return result.next
 
