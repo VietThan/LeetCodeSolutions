@@ -216,6 +216,81 @@ I chose Z, which is totally wrong in light of Q3.
 
 **Reflection Answer:**
 
-1. `#include` should include something
+1. `#include` must include something
 2. `main()` must return `int`
 3. `printf()` need header `<cstdio>`
+
+## Q5: Which one of the following statements allocates enough space?
+
+> Which one of the following statements allocates enough space to hold an array of 10 integers that > are initialized to 0?
+> 
+> Pick **ONE** option.
+> 
+> 1. ```cpp
+>     int *ptr = (int *) malloc(10*sizeof(int));
+>     ```
+> 2. ```cpp
+>     int *ptr = (int *) malloc(10, sizeof(int));
+>     ```
+> 3. ```cpp
+>     int *ptr = (int *) calloc(10, sizeof(int));
+>     ```
+> 4. ```cpp
+>     int *ptr = (int *) alloc(10*sizeof(int));
+>     ```
+
+**Interview Answer:**
+
+Chose option 3. `malloc` allocates unitialized memory. There is no `alloc`.
+
+**Reflection Answer:**
+
+Ok, _"the *alloc variants are pretty mnemonic" - Cascabel, StackOverflow_
+
+[Difference between malloc and calloc?](https://stackoverflow.com/questions/1538420/difference-between-malloc-and-calloc)
+
+- malloc = memory-alloc
+- calloc = clear-alloc
+- realloc = re-alloc
+
+> `calloc()` gives you a zero-initialized buffer, while `malloc()` leaves the memory uninitialized.
+
+## Q6
+
+## Q7: Product Defects
+[LeetCode 221](https://leetcode.com/problems/maximal-square/). Maximal Square.
+
+Frikin Dynamic Programming.
+
+## Q8: Which is the right answer to the following?
+
+> Different compilers and host OS behaviors affect how a C program can execute. The following program was compiled with GCC and executed in a Linux host. What happens when the following program is executed?
+> 
+> ```cpp
+> int main(void)
+> {
+>     char *s = "hello world";
+>     *s = 'H';
+> }
+> ```
+> 
+> Pick **ONE** option:
+> 
+> 1. SIGABRT signal is sent
+> 2. SIGSEGV signal is sent
+> 3. Program runs successfully, nothing is printed
+> 4. SIGILL signal is sent
+
+**Interview Answer:**
+
+I chose option 3. Which is gonna be the WRONG answer I think.
+
+**Reflection Answer:**
+
+Segmentation fault, which is SIGSEGV.
+
+Code works on [https://www.onlinegdb.com/online_c++_compiler](https://www.onlinegdb.com/online_c++_compiler) when run, but debug shows sigsegv.
+
+Testing on https://godbolt.org/ shows that it would be SIGSEGV.
+
+[Reason](https://stackoverflow.com/questions/20944784/why-is-conversion-from-string-constant-to-char-valid-in-c-but-invalid-in-c), [Oracle](https://docs.oracle.com/cd/E19059-01/wrkshp50/805-4956/bajbebbg/index.html).
