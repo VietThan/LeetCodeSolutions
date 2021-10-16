@@ -162,7 +162,7 @@ I chose option 1, "compile error" because `gt` appeared out of nowhere, having n
 
 **Reflection answer:**
 
-Ok, after putting this through [godbolt.org](https://godbolt.org/) with the `x86-64 gcc (trunk)` compiler, I get the following errors:
+Ok, after putting this through [godbolt.org](https://godbolt.org/) with the `x86-64 gcc (trunk)` compiler, I got the following errors:
 
 ```sh
 <source>:1:1: warning: ISO C++ forbids declaration of 'main' with no type [-Wreturn-type]
@@ -191,7 +191,7 @@ Let's break it down, pretty simple:
 1. `main()` must have a return type (should have been `int main()`)
 2. `xyz` is a struct, not a pointer that allows dereferencing
 3. `gt` doesn't exist (where was it declared?)
-4. `i` doesn't exist (people can get confused but this is not referring to `xyz.i`)
+4. `i` doesn't exist (people can get confused but this is not referring to `xyz.i` because again, `i` was never declared)
 5. need to include `<cstdio>` to use `printf`
 
 ## Q4: What is the output of the following code?
@@ -255,7 +255,178 @@ Ok, _"the *alloc variants are pretty mnemonic" - Cascabel, StackOverflow_
 
 > `calloc()` gives you a zero-initialized buffer, while `malloc()` leaves the memory uninitialized.
 
-## Q6
+## Q6: Document Chunking
+Could not find the LeetCode for this.
+
+> A financial services company is uploading documents to a compliance system for analysis. They use a chunking mechanism as below.
+> 
+> - Each document is divided into equal sized packets.
+> - Documents are then divided and uploaded in "cunks of packets. A chunk is defined as a contiguous collection of _2^n_ packets where _n_ is any interger >= 0.
+> - After the document is divided into chunks. randomly selected chunks are uploaded until the entire document is completely uploaded.
+> 
+> There is one document that is partially uploaded, described in _uploadedChunks_. Determine the minimum number of chunks that are yet to be uploaded.
+> 
+> **Example**
+> `totalPackets = 5`, `n = 2` number of chunks uploaded, `uploadedChunks = [[1,2]]`.
+> 
+> - The document has 5 packets and 1 chunk of _2^1 = 2_ packets _[1,2]_ already uploaded.
+> - The remaining 3 packets are uploaded in 2 chunks. The length of _chunk1_ is _2^1 = 2_, packets _[3, 4]_, and the length of _chunk2_ is  _2^0 = 1_ packet, _[5]_.
+> 
+> 
+> **Function Description**:
+> 
+> Complete the `minimumChunksRequired` function in the editor.
+> 
+> `minimumChunksRequired` has the following parameters:
+> - `long int totalPackets`: the number of packets in the document
+> - `long int uploadedChunks[n][2]`: each `uploadedChunks[i]` describes the start and end packet numbers of the uploaded chunks.
+> 
+> **Returns:**
+> - `int`: an integer that denotes the minimum number of chunks that need to be uploaded.
+> 
+> **Constraints:**
+> - _1 <= totalPackets < 10^18_
+> - _0 <= uploaded < 10^5_
+> - The uploaded chunks do not overlap
+> - _1 <= starting packet <= ending packet <= totalPackets_
+
+
+**Interview Answer:**
+```py
+def binaryPacketCountCalc(newChunkCount: int) -> int:
+    count = 0
+    while newChunkCount != 0:
+        quotient = newChunkCount // 2
+        remainder = newChunkCount % 2
+        if remainder == 1:
+            count += 1
+            
+        newChunkCount = quotient
+
+    return count
+    
+    
+def minimumChunksRequired(totalPackets, uploadedChunks):
+    numOfChunks = len(uploadedChunks)
+
+    chunkMap = {}
+
+    # fill the chunk hashmap
+    for chunk in uploadedChunks:
+        chunkMap[chunk[0]] = chunk[1]
+
+    chunkPtr = 1
+
+    result = 0
+
+    while(chunkPtr <= totalPackets):
+        if chunkPtr in chunkMap:
+            # skip over chunk already uploaded
+            chunkPtr = chunkMap[chunkPtr]
+            chunkPtr += 1
+        else:
+            newChunkStart = chunkPtr
+            newChunkEnd = chunkPtr
+            while(newChunkEnd <= totalPackets and newChunkEnd not in chunkMap):
+                newChunkEnd += 1
+                # when stop, newChunkEnd at end+1 of new chunk
+                
+            newChunkCount = newChunkEnd - newChunkStart
+
+            result += binaryPacketCountCalc(newChunkCount)
+            
+            chunkPtr = newChunkEnd
+
+    return result
+    
+totalPackets = 5
+uploadedChunks = [[1,2]]
+
+print(minimumChunksRequired(totalPackets, uploadedChunks))
+```
+
+This answer didn't do all test cases because of time limitation.
+
+**Reflection Answer**:
+
+First of all, `binaryPacketCountCalc` can totally be a litle bit more efficient.
+
+```py
+def binaryPacketCountCalc(newChunkCount: int) -> int:
+    count = 0
+    while newChunkCount != 0:
+        remainder = newChunkCount % 2
+        newChunkCount = newChunkCount // 2
+        if remainder == 1:
+            count += 1
+
+    return count
+```
+
+Second, let's tackle the time limit exceed problem we currently have. It's because of this part in the code:
+
+```py
+while(newChunkEnd <= totalPackets and newChunkEnd not in chunkMap):
+    newChunkEnd += 1
+```
+
+This is totally inefficient. Imagine for example we're given inputs _totalPackets = 10^5_ and _uploadedChunks = [\[10^5-1, 10^5]_ The program would have to increment to _10^5-1_ before the program can actually continue.
+
+Trying to throw a hashmap at it was not the best idea, just use the list of uploaded chunks but sorted would have been enough.
+
+This brings us to the full solution:
+
+```py
+def binaryPacketCountCalc(newChunkCount: int) -> int:
+    count = 0
+    while newChunkCount != 0:
+        remainder = newChunkCount % 2
+        newChunkCount = newChunkCount // 2
+        if remainder == 1:
+            count += 1
+
+    return count
+    
+    
+def minimumChunksRequired(totalPackets, uploadedChunks):
+    # sort the uploadedChunks by starting packet
+    uploadedChunks.sort(key= lambda chunk: chunk[0])
+    
+    chunkPtr = 0
+    packetPtr = 1
+    
+    result = 0
+    
+    while(packetPtr <= totalPackets and chunkPtr < len(uploadedChunks)):
+        if packetPtr == uploadedChunks[chunkPtr][0]:
+            packetPtr = uploadedChunks[chunkPtr][1] + 1
+            chunkPtr += 1
+        else:
+            newChunkStart = packetPtr
+            newChunkEnd = uploadedChunks[chunkPtr][0]
+            newChunkCount = newChunkEnd - newChunkStart
+            
+            result += binaryPacketCountCalc(newChunkCount)
+            
+            packetPtr = uploadedChunks[chunkPtr][1] + 1
+            chunkPtr += 1
+          
+    if packetPtr < totalPackets:
+        newChunkCount = totalPackets - packetPtr + 1
+        result += binaryPacketCountCalc(newChunkCount)
+        
+    return result
+    
+    
+totalPackets = 5
+uploadedChunks = [[2,2],[1,1]]
+print(minimumChunksRequired(totalPackets, uploadedChunks))
+
+totalPackets = 5
+uploadedChunks = [[5,5]]
+print(minimumChunksRequired(totalPackets, uploadedChunks))
+```
+
 
 ## Q7: Product Defects
 [LeetCode 221](https://leetcode.com/problems/maximal-square/). Maximal Square.
